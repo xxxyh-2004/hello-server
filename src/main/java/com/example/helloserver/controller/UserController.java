@@ -1,4 +1,5 @@
 package com.example.helloserver.controller;
+
 import com.example.helloserver.common.Result;
 import com.example.helloserver.entity.User;
 import org.springframework.web.bind.annotation.*;
@@ -29,5 +30,12 @@ public class UserController {
     @DeleteMapping("/{id}")
     public Result<String> deleteUser(@PathVariable Long id) {
         return Result.success("删除成功，用户ID：" + id);
+    }
+
+    // ====================== 只加这一个接口就行 ======================
+    // 5. 登录接口（作业要求：白名单，不需要token）
+    @GetMapping("/login")
+    public Result<String> login() {
+        return Result.success("登录成功，已生成Token");
     }
 }
