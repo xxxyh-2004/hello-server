@@ -3,46 +3,19 @@ package com.example.helloserver.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
 
-@TableName("sys_user")
+/**
+ * 用户实体类
+ * 对应数据库表：sys_user
+ */
+@Data
+@TableName("sys_user")           // 必须和数据库表名完全一致！
 public class User {
-    @TableId(type = IdType.AUTO)
+
+    @TableId(type = IdType.AUTO)  // MySQL 自增主键
     private Long id;
+
     private String username;
     private String password;
-    private String name;
-
-    public User() {}
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 }

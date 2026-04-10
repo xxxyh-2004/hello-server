@@ -1,15 +1,14 @@
 package com.example.helloserver;
 
-import com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-// 只加了这一段：exclude = MybatisPlusAutoConfiguration.class
-@SpringBootApplication(exclude = MybatisPlusAutoConfiguration.class)
+@SpringBootApplication
+// 🔥 必须加这一行！扫描你的 Mapper 接口
+@MapperScan("com.example.helloserver.mapper")
 public class HelloServerApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(HelloServerApplication.class, args);
     }
-
 }
