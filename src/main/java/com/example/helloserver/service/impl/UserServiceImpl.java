@@ -1,6 +1,7 @@
 package com.example.helloserver.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.helloserver.common.Result;
 import com.example.helloserver.dto.UserDTO;
@@ -64,5 +65,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             return Result.error("用户不存在");
         }
         return Result.success("查询成功，用户名为：" + user.getUsername());
+    }
+
+    // ==================== 新增：分页查询用户列表 ====================
+    @Override
+    public Result<Object> getUserPage(Integer pageNum, Integer pageSize) {
+        // 1. 创建分页对象（当前页码，每页条数）
+        Page<User> pageParam = new Page<>(pageNum, pageSize);
+
+        // 2. 执行分页查询（this.page() 是 ServiceImpl 提供的方法，自动生成 COUNT + LIMIT）
+        Page<User> resultPage = this.page(pageParam);
+
+        // 3. 返回分页结果（里面包含 records、total、current、pages 等完整信息）
+        return Result.success(resultPage);
     }
 }

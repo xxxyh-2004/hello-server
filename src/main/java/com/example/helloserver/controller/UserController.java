@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 用户控制器
- * 对应任务5要求的所有接口
+ * 对应任务5要求的所有接口 + 任务6分页查询
  */
 @RestController
 @RequestMapping("/api/users")     // 任务书要求的路径
@@ -39,5 +39,17 @@ public class UserController {
     @GetMapping("/{id}")
     public Result<String> getUserById(@PathVariable Long id) {
         return userService.getUserById(id);
+    }
+
+    // ==================== 新增：任务6 - 分页查询用户列表 ====================
+    /**
+     * 分页查询用户列表
+     * GET /api/users/page?pageNum=1&pageSize=5
+     */
+    @GetMapping("/page")
+    public Result<Object> getUserPage(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "5") Integer pageSize) {
+        return userService.getUserPage(pageNum, pageSize);
     }
 }
