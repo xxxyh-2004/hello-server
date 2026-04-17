@@ -1,21 +1,38 @@
 package com.example.helloserver.service.impl;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.helloserver.common.Result;
 import com.example.helloserver.dto.UserDTO;
 import com.example.helloserver.entity.User;
+import com.example.helloserver.entity.UserInfo;
+import com.example.helloserver.mapper.UserInfoMapper;
 import com.example.helloserver.mapper.UserMapper;
 import com.example.helloserver.service.UserService;
+import com.example.helloserver.vo.UserDetailVO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.concurrent.TimeUnit;
 
 /**
- * UserService 实现类
- * 继承 ServiceImpl 后自动获得大量基础 CRUD 方法
+ * UserService 实现类（包含Redis缓存 + 多表联查 + 数据更新/删除）
  */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private UserInfoMapper userInfoMapper;
+
+    // Redis缓存Key前缀
+    private static final String CACHE_KEY_PREFIX = "user:detail:";
 
     @Override
     public Result<String> register(UserDTO dto) {
@@ -25,7 +42,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User exist = this.getOne(wrapper);
 
         if (exist != null) {
-            return Result.error("用户名已存在");     // 或使用 ResultCode.USER_HAS_EXISTED（推荐）
+            return Result.error("用户名已存在");
         }
 
         // 2. 组装实体并保存到数据库
@@ -33,24 +50,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setUsername(dto.getUsername());
         user.setPassword(dto.getPassword());
 
-        this.save(user);        // ServiceImpl 提供的 save 方法
-
+        this.save(user);
         return Result.success("注册成功！");
     }
 
     @Override
     public Result<String> login(UserDTO dto) {
-        // 1. 根据用户名查询用户
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getUsername, dto.getUsername());
         User user = this.getOne(wrapper);
 
-        // 2. 校验用户是否存在
         if (user == null) {
             return Result.error("用户不存在");
         }
 
-        // 3. 校验密码
         if (!user.getPassword().equals(dto.getPassword())) {
             return Result.error("密码错误");
         }
@@ -67,16 +80,83 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return Result.success("查询成功，用户名为：" + user.getUsername());
     }
 
-    // ==================== 新增：分页查询用户列表 ====================
+    // 分页查询用户列表
     @Override
     public Result<Object> getUserPage(Integer pageNum, Integer pageSize) {
-        // 1. 创建分页对象（当前页码，每页条数）
         Page<User> pageParam = new Page<>(pageNum, pageSize);
-
-        // 2. 执行分页查询（this.page() 是 ServiceImpl 提供的方法，自动生成 COUNT + LIMIT）
         Page<User> resultPage = this.page(pageParam);
-
-        // 3. 返回分页结果（里面包含 records、total、current、pages 等完整信息）
         return Result.success(resultPage);
+    }
+
+    // 多表联查 + Redis缓存查询用户详情
+    @Override
+    public Result<UserDetailVO> getUserDetail(Long userId) {
+        String key = CACHE_KEY_PREFIX + userId;
+
+        // 1. 先查Redis缓存
+        String json = redisTemplate.opsForValue().get(key);
+        if (json != null && !json.isBlank()) {
+            try {
+                UserDetailVO cacheVO = JSONUtil.toBean(json, UserDetailVO.class);
+                return Result.success(cacheVO);
+            } catch (Exception e) {
+                // 缓存反序列化失败，删除脏数据
+                redisTemplate.delete(key);
+            }
+        }
+
+        // 2. 缓存未命中，查数据库
+        UserDetailVO detail = userInfoMapper.getUserDetail(userId);
+        if (detail == null) {
+            return Result.error("用户不存在");
+        }
+
+        // 3. 写回Redis缓存（10分钟过期）
+        redisTemplate.opsForValue().set(
+                key,
+                JSONUtil.toJsonStr(detail),
+                10, TimeUnit.MINUTES);
+
+        return Result.success(detail);
+    }
+
+    // 更新用户信息 + 删除Redis缓存（已修复更新失败问题）
+    @Override
+    public Result<String> updateUserInfo(UserInfo userInfo) {
+        if (userInfo == null || userInfo.getUserId() == null) {
+            return Result.error("参数不能为空");
+        }
+
+        // 关键修改：按user_id更新（替代原updateById）
+        int count = userInfoMapper.updateByUserId(userInfo);
+        boolean success = count > 0;
+
+        if (success) {
+            // 删除缓存，保证数据一致性
+            String key = CACHE_KEY_PREFIX + userInfo.getUserId();
+            redisTemplate.delete(key);
+            return Result.success("用户信息更新成功！");
+        }
+        return Result.error("更新失败");
+    }
+
+    // 删除用户 + 事务 + 删除Redis缓存
+    @Override
+    @Transactional
+    public Result<String> deleteUser(Long userId) {
+        if (userId == null) {
+            return Result.error("用户ID不能为空");
+        }
+
+        // 删除数据库用户
+        boolean success = this.removeById(userId);
+
+        if (success) {
+            // 删除Redis缓存
+            String key = CACHE_KEY_PREFIX + userId;
+            redisTemplate.delete(key);
+            return Result.success("用户删除成功！");
+        }
+        return Result.error("删除失败");
     }
 }

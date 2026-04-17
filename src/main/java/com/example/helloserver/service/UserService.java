@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.helloserver.common.Result;
 import com.example.helloserver.dto.UserDTO;
 import com.example.helloserver.entity.User;
+import com.example.helloserver.entity.UserInfo;
+import com.example.helloserver.vo.UserDetailVO;
 
 /**
  * UserService 接口
@@ -25,4 +27,20 @@ public interface UserService extends IService<User> {
      * @return 分页结果（包含 records、total、current、pages 等信息）
      */
     Result<Object> getUserPage(Integer pageNum, Integer pageSize);
+
+    // ==================== 任务7 新增方法（多表联查 + Redis 缓存） ====================
+    /**
+     * 查询用户详情（sys_user + user_info 联查 + Redis 缓存）
+     */
+    Result<UserDetailVO> getUserDetail(Long userId);
+
+    /**
+     * 更新用户扩展信息（同时删除 Redis 缓存）
+     */
+    Result<String> updateUserInfo(UserInfo userInfo);
+
+    /**
+     * 删除用户（同时删除 Redis 缓存）
+     */
+    Result<String> deleteUser(Long userId);
 }
