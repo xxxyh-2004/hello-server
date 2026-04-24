@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.aliyun.com/repository/central">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -21,7 +21,7 @@
         <java.version>17</java.version>
     </properties>
 
-    <!-- 阿里云 Maven 镜像（国内下载快） -->
+    <!-- 阿里云 Maven 镜像 -->
     <repositories>
         <repository>
             <id>aliyun-central</id>
@@ -40,6 +40,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Spring Security 权限认证 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- MyBatis-Plus（Spring Boot 3 专用） -->
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -54,13 +60,13 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Redis 缓存（任务7 新增） -->
+        <!-- Redis 缓存 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- Hutool 工具包（JSON 转换用，任务7 新增） -->
+        <!-- Hutool 工具包 -->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
