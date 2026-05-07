@@ -11,6 +11,7 @@ import com.example.helloserver.entity.UserInfo;
 import com.example.helloserver.mapper.UserInfoMapper;
 import com.example.helloserver.mapper.UserMapper;
 import com.example.helloserver.service.UserService;
+import com.example.helloserver.security.JwtUtil;
 import com.example.helloserver.vo.UserDetailVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -30,6 +31,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private UserInfoMapper userInfoMapper;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     // Redis缓存Key前缀
     private static final String CACHE_KEY_PREFIX = "user:detail:";
@@ -68,7 +72,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             return Result.error("密码错误");
         }
 
-        return Result.success("登录成功！");
+        String jwt = jwtUtil.generateToken(dto.getUsername());
+        return Result.success(jwt);
     }
 
     @Override
