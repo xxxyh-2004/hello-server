@@ -33,6 +33,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         // 放行登录
                         .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
+                        // 放行聊天接口
+                        .requestMatchers("/api/chat/**").permitAll()
                         // 其他全部需要认证
                         .anyRequest().authenticated()
                 )
